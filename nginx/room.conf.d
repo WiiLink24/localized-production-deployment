@@ -1,0 +1,124 @@
+server {
+  server_name ${ROOM_BASE_DOMAIN};
+  listen 80;
+  client_max_body_size 200M;
+
+  location / {
+    proxy_pass http://room_server:5000/;
+  }
+}
+
+server {
+  server_name url1.${ROOM_BASE_DOMAIN};
+
+  location ~ /conf/brtest-(H|L)\.mov {
+    alias /assets/conf/brtest-H.mov;
+  }
+
+  # Ensure room XML is passed to server.
+  location ~ /(urllink|delivery|coupon|picture|enqmov)/(.*).xml {
+    proxy_pass http://room_server:5000/url1/$1/$2.xml;
+  }
+
+  # If we're serving a movie, upgrade to high quality.
+  location ~ ^/(urllink|delivery|coupon|picture|enqmov)/(\d+)-(L|H)\.mov {
+    alias /assets/$1/$2-H.mov;
+  }
+
+  # Otherwise, serve room assets as-is.
+  location ~ /(urllink|delivery|coupon|picture|enqmov)/(.*) {
+    alias /assets/$1/$2;
+  }
+
+  location /intro {
+    alias /assets/normal-intro;
+  }
+
+  location ~ /wall/(.*img) {
+    alias /assets/normal-wall/$1;
+  }
+  
+  location /list/category/img {
+    alias /assets/normal-category;
+  }
+
+  # We only want to capture movie URLs ending with img or mov.
+  location ~ ^/movie/(.*)/(\d+)\.img {
+    alias /assets/movies/$1/$2.img;
+  }
+
+  location ~ ^/movie/(.*)/(\d+)-(L|H)\.mov {
+    alias /assets/movies/$1/$2-H.mov;
+  }
+
+  location ~ ^/special/(\d+)/img/g1234.img {
+    alias /assets/special/$1/parade_banner.jpg;
+  }
+
+  location ~ ^/special/(\d+)/img/(.*(img)) {
+    alias /assets/special/$1/$2;
+  }
+
+  location /dsmov {
+    alias /assets/dsmov;
+  }
+
+  location /voice {
+    alias /assets/voice;
+  }
+
+  location / {
+      proxy_pass http://room_server:5000/url1/;
+  }
+}
+
+server {
+  server_name url2.${ROOM_BASE_DOMAIN};
+
+  location / {
+     proxy_pass http://room_server:5000/url2/;
+     proxy_set_header X-Time-Zone $http_x_time_zone;
+  }
+}
+
+server {
+  server_name url3.${ROOM_BASE_DOMAIN};
+
+  location /pay/intro {
+    alias /assets/pay-intro;
+  }
+
+  location ~ /pay/wall/(.*img) {
+    alias /assets/pay-wall/$1;
+  }
+
+  location ~ ^/pay/wall/(.*)-(L|H)\.emo {
+    alias /assets/pay-wall/$1-H.emo;
+  }
+
+  location /pay/list/category/img {
+    alias /assets/pay-category;
+  }
+
+  # We only want to capture movie URLs ending with img or mov.
+  location ~ ^/pay/movie/(.*)/(\d+)/(.*)\.img {
+    alias /assets/pay-movie/$1/$2/$3.img;
+  }
+
+  location ~ ^/pay/movie/(.*)/(\d+)/(.*)-(L|H)\.smo {
+    alias /assets/pay-movie/$1/$2/$3-H.smo;
+  }
+
+  location / {
+    proxy_pass http://room_server:5000/url3/;
+  }
+}
+
+server {
+  server_name shop.${ROOM_BASE_DOMAIN};
+  listen 80;
+
+  location / {
+    root /assets/shop;
+  }
+}
