@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  postgres:
+    restart: on-failure:3
+    image: postgres:14-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - db_access
+    ports:
+      - "127.0.0.1:2345:5432"
+    env_file:
+      - .env
+
+  room_server:
+    restart: on-failure:3
+    build: room-server
+    depends_on:
+      - postgres
+    networks:
+      - internal
+      - db_access
+    env_file:
+      - .env
+    volumes:
+      - ./config/room-server/config.py:/home/server/config.py
+      - ./config/eula.txt:/home/server/conf/eula.txt
+      - ./room-assets:/home/server/assets
+
+  nginx:
+    restart: on-failure:3
+    build: nginx/
+    depends_on:
+      - room_server
+    networks:
+      - internal
+    ports:
+      - "127.0.0.1:80:80"
+    env_file:
+      - .env
+    volumes:
+    - ./room-assets:/assets
+
+networks:
+  internal:
+  db_access:
+
+volumes:
+  pgdata:
