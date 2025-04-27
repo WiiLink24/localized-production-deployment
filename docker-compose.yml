@@ -15,7 +15,7 @@ services:
 
   room_server:
     restart: on-failure:3
-    build: room-server
+    image: ghcr.io/wiilink24/room-server:latest
     depends_on:
       - postgres
     networks:
